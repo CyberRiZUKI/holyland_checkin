@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c5f2d">
+    <title>Holy Land Tour Check-In</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 10px;
+            padding-bottom: 0;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 0;
+            height: calc(100vh - 200px);
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .map-btn {
+            background: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s;
+        }
+
+        .map-btn:active {
+            transform: scale(0.95);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: #56CCF2;
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 5px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .checkin-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .checkin-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .location-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .location-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .location-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .location-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .location-category {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .location-description {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .location-coords {
+            color: #999;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .location-visited {
+            background: #d4edda;
+            color: #155724;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .checkin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .checkin-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .checkin-time {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .checkin-location {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
+        .checkin-location:hover {
+            text-decoration: underline;
+        }
+
+        .checkin-notes {
+            color: #666;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #333;
+            border: 2px solid #000;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .export-btn {
+            background: #2ecc71;
+            margin-top: 10px;
+        }
+
+        .location-info {
+            background: #f0f4ff;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: #3498db;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #2980b9;
+        }
+
+        .import-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .import-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .import-section p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .location-count {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 15px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Swipe indicator */
+        .swipe-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .swipe-indicator.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .map-container {
+                height: 450px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                font-size: 13px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="tabs">
+        <button class="tab active" onclick="switchTabByClick('map')">Map</button>
+        <button class="tab" onclick="switchTabByClick('history')">RECORD</button>
+        <button class="tab" onclick="switchTabByClick('locations')">LOCATIONS</button>
+        <button class="tab" onclick="switchTabByClick('settings')">SETS</button>
+    </div>
+
+    <!-- MAP TAB -->
+    <div id="map-tab" class="tab-content active">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-checkins-map">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="today-checkins-map">0</div>
+                <div class="stat-label">Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="locations-visited">0</div>
+                <div class="stat-label">Sites</div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="map-controls">
+                <button class="map-btn" onclick="showAllSites()">🏛️</button>
+                <button class="map-btn" onclick="showMyCheckins()">📍</button>
+                <button class="map-btn" onclick="centerOnMap()">🎯</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div id="history-tab" class="tab-content">
+        <div class="card">
+            <div id="checkin-list" class="checkin-list"></div>
+            <button onclick="exportCheckins()" class="btn btn-primary export-btn">
+                <span></span> Export Check-Ins (JSON)
+            </button>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 12px; color: #333;">Quick Info</h3>
+            <p style="font-size: 14px; color: #666; line-height: 1.6;">
+                <strong>🔵 Blue markers:</strong> Holy sites you can visit<br>
+                <strong>🟢 Green markers:</strong> Places you've checked in<br>
+            </p>
+            <div class="location-count" id="location-count-display">0 locations loaded</div>
+        </div>
+    </div>
+
+    <!-- LOCATIONS TAB -->
+    <div id="locations-tab" class="tab-content">
+        <div class="card">
+            <div class="filter-buttons" id="category-filters">
+                <!-- Categories will be dynamically generated -->
+            </div>
+
+            <div id="locations-list" class="checkin-list"></div>
+        </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="settings-tab" class="tab-content">
+        <div class="card">
+            <div class="import-section">
+                <h3>Current Locations</h3>
+                <p id="current-locations-info">Loading...</p>
+                <button onclick="exportLocations()" class="btn btn-primary export-btn">
+                    <span>📤</span> Export as GeoJSON
+                </button>
+            </div>
+
+            <div class="import-section">
+                <h3>Import GeoJSON Locations</h3>
+                <p>Upload a GeoJSON file with your custom locations. This will replace all existing locations.</p>
+
+                <div class="file-input-wrapper">
+                    <input type="file" id="location-file-input" accept=".json,.geojson" onchange="importLocations(event)">
+                    <label for="location-file-input" class="file-input-label">
+                        <span>📁</span> Choose GeoJSON File
+                    </label>
+                </div>
+
+                <div id="import-success" class="success-message"></div>
+                <div id="import-error" class="error-message"></div>
+            </div>
+
+            <div class="import-section">
+                <h3>🔄 Reset to Default Locations</h3>
+                <p>Restore the original locations.</p>
+                <button onclick="resetToDefaultLocations()" class="btn btn-primary" style="background: #e74c3c;">
+                    <span>🔄</span> Reset to Defaults
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="swipe-indicator" id="swipe-indicator"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Default locations in GeoJSON format
+    const defaultGeoJSON = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [139.6917, 35.6762]
+                },
+                "properties": {
+                    "name": "Tokyo Tower",
+                    "description": "Iconic 333-meter tall communications and observation tower",
+                    "category": "Landmark"
+                }
+            },
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [139.6993, 35.6586]
+                },
+                "properties": {
+                    "name": "Senso-ji Temple",
+                    "description": "Tokyo's oldest temple, famous for its Thunder Gate",
+                    "category": "Temple"
+                }
+            },
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [139.7671, 35.7148]
+                },
+                "properties": {
+                    "name": "Tokyo Skytree",
+                    "description": "World's tallest tower at 634 meters with observation decks",
+                    "category": "Landmark"
+                }
+            }
+        ]
+    };
+
+    // Initialize app data
+    let geoJSONData = JSON.parse(localStorage.getItem('holyland-geojson')) || defaultGeoJSON;
+    let checkins = JSON.parse(localStorage.getItem('holyland-checkins') || '[]');
+    let map;
+    let markers = [];
+    let currentCategoryFilter = 'all';
+    let currentTabIndex = 0;
+    const tabOrder = ['map', 'history', 'locations', 'settings'];
+
+    // Touch swipe detection
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchStartY = 0;
+    let touchEndY = 0;
+    let touchStartElement = null;
+
+    function isMapArea(element) {
+        // Check if touch started on map or its children
+        return element.closest('#map') !== null ||
+            element.closest('.map-container') !== null ||
+            element.closest('.map-controls') !== null;
+    }
+
+    function handleSwipe() {
+        // Don't handle swipe if it started on the map
+        if (touchStartElement && isMapArea(touchStartElement)) {
+            return;
+        }
+
+        const swipeThreshold = 50; // minimum distance for swipe
+        const verticalThreshold = 100; // maximum vertical movement
+        const horizontalDistance = touchEndX - touchStartX;
+        const verticalDistance = Math.abs(touchEndY - touchStartY);
+
+        // Ignore if too much vertical movement (likely scrolling)
+        if (verticalDistance > verticalThreshold) {
+            return;
+        }
+
+        // Swipe left (next tab)
+        if (horizontalDistance < -swipeThreshold) {
+            const nextIndex = currentTabIndex + 1;
+            if (nextIndex < tabOrder.length) {
+                showSwipeIndicator('→');
+                switchTab(tabOrder[nextIndex]);
+            }
+        }
+        // Swipe right (previous tab)
+        else if (horizontalDistance > swipeThreshold) {
+            const prevIndex = currentTabIndex - 1;
+            if (prevIndex >= 0) {
+                showSwipeIndicator('←');
+                switchTab(tabOrder[prevIndex]);
+            }
+        }
+    }
+
+    function showSwipeIndicator(arrow) {
+        const indicator = document.getElementById('swipe-indicator');
+        indicator.textContent = arrow;
+        indicator.classList.add('show');
+        setTimeout(() => {
+            indicator.classList.remove('show');
+        }, 300);
+    }
+
+    // Add touch event listeners
+    document.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+        touchStartElement = e.target; // Store where touch started
+    }, { passive: true });
+
+    document.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        handleSwipe();
+    }, { passive: true });
+
+    // Get location name from feature
+    function getLocationName(feature) {
+        return feature.properties.name || 'Unnamed Location';
+    }
+
+    // Get coordinates from feature
+    function getCoordinates(feature) {
+        if (feature.geometry && feature.geometry.type === 'Point' && feature.geometry.coordinates) {
+            return {
+                lng: feature.geometry.coordinates[0],
+                lat: feature.geometry.coordinates[1]
+            };
+        }
+        return null;
+    }
+
+    // Import GeoJSON from file
+    function importLocations(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+
+                // Validate GeoJSON structure
+                if (importedData.type !== 'FeatureCollection') {
+                    throw new Error('Invalid GeoJSON: Must be a FeatureCollection');
+                }
+
+                if (!Array.isArray(importedData.features)) {
+                    throw new Error('Invalid GeoJSON: Missing features array');
+                }
+
+                if (importedData.features.length === 0) {
+                    throw new Error('GeoJSON file contains no features');
+                }
+
+                // Validate each feature
+                for (let i = 0; i < importedData.features.length; i++) {
+                    const feature = importedData.features[i];
+
+                    if (feature.type !== 'Feature') {
+                        throw new Error(`Feature ${i + 1}: type must be "Feature"`);
+                    }
+
+                    if (!feature.geometry || feature.geometry.type !== 'Point') {
+                        throw new Error(`Feature ${i + 1}: geometry must be a Point`);
+                    }
+
+                    if (!Array.isArray(feature.geometry.coordinates) || feature.geometry.coordinates.length !== 2) {
+                        throw new Error(`Feature ${i + 1}: coordinates must be [lng, lat]`);
+                    }
+
+                    const lng = feature.geometry.coordinates[0];
+                    const lat = feature.geometry.coordinates[1];
+
+                    if (typeof lng !== 'number' || typeof lat !== 'number') {
+                        throw new Error(`Feature ${i + 1}: coordinates must be numbers`);
+                    }
+
+                    if (lng < -180 || lng > 180) {
+                        throw new Error(`Feature ${i + 1}: longitude must be between -180 and 180`);
+                    }
+
+                    if (lat < -90 || lat > 90) {
+                        throw new Error(`Feature ${i + 1}: latitude must be between -90 and 90`);
+                    }
+
+                    if (!feature.properties || !feature.properties.name) {
+                        throw new Error(`Feature ${i + 1}: properties.name is required`);
+                    }
+                }
+
+                // Success - update GeoJSON
+                geoJSONData = importedData;
+                saveGeoJSON();
+
+                updateCurrentLocationsInfo();
+                if (map) {
+                    showAllSites();
+                }
+
+                const successMsg = document.getElementById('import-success');
+                successMsg.textContent = `✓ Successfully imported ${importedData.features.length} locations!`;
+                successMsg.style.display = 'block';
+                document.getElementById('import-error').style.display = 'none';
+
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 5000);
+
+            } catch (error) {
+                const errorMsg = document.getElementById('import-error');
+                errorMsg.textContent = `✗ Error: ${error.message}`;
+                errorMsg.style.display = 'block';
+                document.getElementById('import-success').style.display = 'none';
+            }
+        };
+        reader.readAsText(file);
+
+        event.target.value = '';
+    }
+
+    // Export locations as GeoJSON
+    function exportLocations() {
+        const dataStr = JSON.stringify(geoJSONData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/geo+json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `locations-${new Date().toISOString().split('T')[0]}.geojson`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Export check-ins to JSON
+    function exportCheckins() {
+        const dataStr = JSON.stringify(checkins, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `checkins-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Reset to default locations
+    function resetToDefaultLocations() {
+        if (confirm('Are you sure you want to reset to the default locations? This cannot be undone.')) {
+            geoJSONData = JSON.parse(JSON.stringify(defaultGeoJSON));
+            saveGeoJSON();
+            updateCurrentLocationsInfo();
+            if (map) {
+                showAllSites();
+            }
+            alert('✓ Locations reset to defaults!');
+        }
+    }
+
+    // Update current locations info
+    function updateCurrentLocationsInfo() {
+        const info = document.getElementById('current-locations-info');
+        const count = geoJSONData.features.length;
+        const categories = [...new Set(geoJSONData.features.map(f => f.properties.category || 'Uncategorized'))];
+
+        info.innerHTML = `
+            <strong>${count} location(s) loaded</strong><br>
+            Format: GeoJSON FeatureCollection<br>
+            Categories: ${categories.join(', ')}
+        `;
+
+        document.getElementById('location-count-display').textContent = `${count} locations loaded`;
+    }
+
+    // Render locations list
+    function renderLocationsList() {
+        const list = document.getElementById('locations-list');
+        const filtersContainer = document.getElementById('category-filters');
+
+        if (geoJSONData.features.length === 0) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <p style="font-size: 18px;">No locations loaded</p>
+                    <p style="font-size: 13px; margin-top: 8px;">Import locations in Settings</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Get all categories
+        const categories = ['all', ...new Set(geoJSONData.features.map(f => f.properties.category || 'Uncategorized'))];
+
+        // Render category filters
+        filtersContainer.innerHTML = categories.map(cat => `
+            <button class="filter-btn ${currentCategoryFilter === cat ? 'active' : ''}"
+                    onclick="filterByCategory('${cat}')">
+                ${cat === 'all' ? '🌐 All' : cat}
+            </button>
+        `).join('');
+
+        // Filter features
+        const filteredFeatures = currentCategoryFilter === 'all'
+            ? geoJSONData.features
+            : geoJSONData.features.filter(f => (f.properties.category || 'Uncategorized') === currentCategoryFilter);
+
+        // Render locations
+        list.innerHTML = filteredFeatures.map(feature => {
+            const name = getLocationName(feature);
+            const coords = getCoordinates(feature);
+            const props = feature.properties;
+            const visitCount = checkins.filter(c => c.location === name).length;
+            const hasVisited = visitCount > 0;
+
+            return `
+                <div class="location-item" onclick="showLocationOnMap('${name.replace(/'/g, "\\'")}')">
+                    <div class="location-header">
+                        <div class="location-name">${name}</div>
+                        <div class="location-category">${props.category || 'Uncategorized'}</div>
+                    </div>
+                    <div class="location-description">
+                        ${props.description || 'No description available'}
+                    </div>
+                    ${coords ? `<div class="location-coords">${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}</div>` : ''}
+                    ${hasVisited ? `<div class="location-visited">✓ Visited ${visitCount} time(s)</div>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Filter locations by category
+    function filterByCategory(category) {
+        currentCategoryFilter = category;
+        renderLocationsList();
+    }
+
+    // Show location on map from locations list
+    function showLocationOnMap(locationName) {
+        switchTab('map');
+        setTimeout(() => {
+            const feature = geoJSONData.features.find(f => getLocationName(f) === locationName);
+            if (feature && map) {
+                const coords = getCoordinates(feature);
+                if (coords) {
+                    map.setView([coords.lat, coords.lng], 15);
+
+                    const marker = markers.find(m => m.name === locationName);
+                    if (marker) {
+                        marker.marker.openPopup();
+                    }
+                }
+            }
+        }, 200);
+    }
+
+    // Initialize Map with Leaflet
+    function initMap() {
+        if (geoJSONData.features.length === 0) {
+            document.getElementById('map').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999;">No locations loaded. Please import GeoJSON in Settings.</div>';
+            return;
+        }
+
+        let totalLat = 0, totalLng = 0, validCount = 0;
+
+        geoJSONData.features.forEach(feature => {
+            const coords = getCoordinates(feature);
+            if (coords) {
+                totalLat += coords.lat;
+                totalLng += coords.lng;
+                validCount++;
+            }
+        });
+
+        if (validCount === 0) {
+            document.getElementById('map').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999;">No valid coordinates found.</div>';
+            return;
+        }
+
+        const avgLat = totalLat / validCount;
+        const avgLng = totalLng / validCount;
+
+        map = L.map('map').setView([avgLat, avgLng], 9);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        showAllSites();
+    }
+
+    // Custom icon functions
+    function getMarkerIcon(color, visited = false) {
+        const iconHtml = visited
+            ? `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px;">✓</div>`
+            : `<div style="background-color: ${color}; width: 25px; height: 25px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`;
+
+        return L.divIcon({
+            html: iconHtml,
+            className: 'custom-marker',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+    }
+
+    // Show all sites
+    function showAllSites() {
+        if (!map) return;
+        clearMarkers();
+
+        geoJSONData.features.forEach(feature => {
+            const coords = getCoordinates(feature);
+            if (!coords) return;
+
+            const name = getLocationName(feature);
+            const props = feature.properties;
+            const hasVisited = checkins.some(c => c.location === name);
+            const visitCount = checkins.filter(c => c.location === name).length;
+
+            const marker = L.marker([coords.lat, coords.lng], {
+                icon: getMarkerIcon(hasVisited ? '#2ecc71' : '#667eea', hasVisited)
+            }).addTo(map);
+
+            const popupContent = `
+                <div class="marker-info">
+                    <div class="marker-title">${name}</div>
+                    <div class="marker-details">
+                        ${props.description || 'No description'}<br>
+                        ${props.category ? `<em>${props.category}</em><br>` : ''}
+                        ${hasVisited ? `<br><strong style="color: #2ecc71;">✓ Visited ${visitCount} time(s)</strong>` : ''}
+                    </div>
+                    <button class="marker-checkin-btn" onclick="quickCheckin('${name.replace(/'/g, "\\'")}')">
+                        Check In Here
+                    </button>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+            markers.push({ marker, coords, name });
+        });
+
+        if (markers.length > 0) {
+            const group = L.featureGroup(markers.map(m => m.marker));
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+    }
+
+    // Show only user's check-ins
+    function showMyCheckins() {
+        if (!map) return;
+        clearMarkers();
+
+        const visitedLocations = [...new Set(checkins.map(c => c.location))];
+        const visitedFeatures = visitedLocations.map(name =>
+            geoJSONData.features.find(f => getLocationName(f) === name)
+        ).filter(Boolean);
+
+        if (visitedFeatures.length === 0) {
+            alert('No check-ins yet! Start your journey.');
+            showAllSites();
+            return;
+        }
+
+        visitedFeatures.forEach(feature => {
+            const coords = getCoordinates(feature);
+            if (!coords) return;
+
+            const name = getLocationName(feature);
+            const visitCount = checkins.filter(c => c.location === name).length;
+
+            const marker = L.marker([coords.lat, coords.lng], {
+                icon: getMarkerIcon('#2ecc71', true)
+            }).addTo(map);
+
+            const visits = checkins.filter(c => c.location === name);
+            const visitList = visits.map(v =>
+                `• ${new Date(v.timestamp).toLocaleDateString()}`
+            ).join('<br>');
+
+            const popupContent = `
+                <div class="marker-info">
+                    <div class="marker-title">${name}</div>
+                    <div class="marker-details">
+                        <strong style="color: #2ecc71;">✓ Visited ${visitCount} time(s)</strong><br><br>
+                        ${visitList}
+                    </div>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+            markers.push({ marker, coords, name });
+        });
+
+        const group = L.featureGroup(markers.map(m => m.marker));
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+
+    // Center on first location
+    function centerOnMap() {
+        if (!map || geoJSONData.features.length === 0) return;
+
+        const coords = getCoordinates(geoJSONData.features[0]);
+        if (coords) {
+            map.setView([coords.lat, coords.lng], 12);
+        }
+    }
+
+    // Clear all markers
+    function clearMarkers() {
+        markers.forEach(m => map.removeLayer(m.marker));
+        markers = [];
+    }
+
+    // Quick check-in from map
+    window.quickCheckin = function(locationName) {
+        if (confirm(`Check in at ${locationName}?`)) {
+            const checkin = {
+                location: locationName,
+                timestamp: new Date().toISOString()
+            };
+
+            checkins.push(checkin);
+            localStorage.setItem('holyland-checkins', JSON.stringify(checkins));
+
+            updateStats();
+            if (map) {
+                showAllSites();
+            }
+
+            alert(`✓ Checked in at ${locationName}!`);
+        }
+    }
+
+    // Switch tabs (called by swipe)
+    function switchTab(tab) {
+        currentTabIndex = tabOrder.indexOf(tab);
+
+        // Remove active states
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active state
+        document.querySelectorAll('.tab')[currentTabIndex].classList.add('active');
+        document.getElementById(tab + '-tab').classList.add('active');
+
+        // Tab-specific actions
+        if (tab === 'history') {
+            renderCheckins();
+        } else if (tab === 'locations') {
+            renderLocationsList();
+        } else if (tab === 'map') {
+            setTimeout(() => {
+                if (map) {
+                    map.invalidateSize();
+                    showAllSites();
+                }
+            }, 100);
+        } else if (tab === 'settings') {
+            updateCurrentLocationsInfo();
+        }
+    }
+
+    // Switch tabs by clicking (separate function to avoid event issues)
+    function switchTabByClick(tab) {
+        switchTab(tab);
+    }
+
+    // Update statistics
+    function updateStats() {
+        const today = new Date().toDateString();
+        const todayCount = checkins.filter(c => new Date(c.timestamp).toDateString() === today).length;
+        const uniqueLocations = [...new Set(checkins.map(c => c.location))].length;
+
+        ['total-checkins', 'total-checkins-map'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = checkins.length;
+        });
+
+        ['today-checkins', 'today-checkins-map'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = todayCount;
+        });
+
+        ['locations-count', 'locations-visited'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = uniqueLocations;
+        });
+    }
+
+    // Format date
+    function formatDate(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Render check-ins
+    function renderCheckins() {
+        const list = document.getElementById('checkin-list');
+
+        if (checkins.length === 0) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <p style="font-size: 18px;">No check-ins yet</p>
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = checkins.map((checkin, index) => `
+            <div class="checkin-item">
+                <div class="checkin-header">
+                    <div>
+                        <div class="checkin-time">${formatDate(checkin.timestamp)}</div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteCheckin(${index})">Delete</button>
+                </div>
+                <div class="checkin-location" onclick="showOnMap('${checkin.location.replace(/'/g, "\\'")}')">
+                    ${checkin.location}
+                </div>
+            </div>
+        `).reverse().join('');
+    }
+
+    // Show location on map
+    function showOnMap(locationName) {
+        switchTab('map');
+        setTimeout(() => {
+            const feature = geoJSONData.features.find(f => getLocationName(f) === locationName);
+            if (feature && map) {
+                const coords = getCoordinates(feature);
+                if (coords) {
+                    map.setView([coords.lat, coords.lng], 15);
+
+                    const marker = markers.find(m => m.name === locationName);
+                    if (marker) {
+                        marker.marker.openPopup();
+                    }
+                }
+            }
+        }, 200);
+    }
+
+    // Delete check-in
+    function deleteCheckin(index) {
+        if (confirm('Are you sure you want to delete this check-in?')) {
+            checkins.splice(index, 1);
+            localStorage.setItem('holyland-checkins', JSON.stringify(checkins));
+            renderCheckins();
+            updateStats();
+            if (map) showAllSites();
+        }
+    }
+
+    // Initialize everything
+    window.addEventListener('load', function() {
+        updateStats();
+        updateCurrentLocationsInfo();
+        initMap();
+    });
+</script>
+</body>
+</html>
